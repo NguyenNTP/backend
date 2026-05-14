@@ -1,0 +1,768 @@
+﻿openapi: 3.0.0
+info:
+  title: E-Commerce API
+  description: |
+    Full E-Commerce REST API with Authentication, Users, Products, Reviews, and Orders.
+
+    **Authentication:** Login via `/api/v1/auth/login` to receive a cookie-based token, then use secured endpoints.
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+    description: Local server
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+
+  schemas:
+    RegisterInput:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          format: email
+          example: john@example.com
+        password:
+          type: string
+          example: secret123
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: john@example.com
+        password:
+          type: string
+          example: secret123
+
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 64a1c2b3d4e5f6a7b8c9d0e1
+        name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          example: john@example.com
+        role:
+          type: string
+          enum: [user, admin, guest]
+          example: user
+
+    UpdateUserInput:
+      type: object
+      required: [name, email]
+      properties:
+        name:
+          type: string
+          example: Jane Doe
+        email:
+          type: string
+          format: email
+          example: jane@example.com
+
+    UpdatePasswordInput:
+      type: object
+      required: [oldPassword, newPassword]
+      properties:
+        oldPassword:
+          type: string
+          example: secret123
+        newPassword:
+          type: string
+          example: newSecret456
+
+    Product:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 64a1c2b3d4e5f6a7b8c9d0e2
+        name:
+          type: string
+          example: Leather Sofa
+        price:
+          type: number
+          example: 299
+        description:
+          type: string
+          example: A comfortable leather sofa
+        image:
+          type: string
+          example: /uploads/example.jpg
+        category:
+          type: string
+          enum: [office, kitchen, bedroom, living room, dining, kids]
+        company:
+          type: string
+          enum: [ikea, liddy, marcos]
+        colors:
+          type: array
+          items:
+            type: string
+          example: ["#000000"]
+        featured:
+          type: boolean
+        freeShipping:
+          type: boolean
+        inventory:
+          type: number
+          example: 15
+        averageRating:
+          type: number
+          example: 4.5
+        numOfReviews:
+          type: number
+          example: 10
+
+    ProductInput:
+      type: object
+      required: [name, price, description, category, company, colors]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          example: Leather Sofa
+        price:
+          type: number
+          example: 299
+        description:
+          type: string
+          maxLength: 1000
+          example: A comfortable leather sofa
+        image:
+          type: string
+          example: /uploads/example.jpg
+        category:
+          type: string
+          enum: [office, kitchen, bedroom, living room, dining, kids]
+          example: living room
+        company:
+          type: string
+          enum: [ikea, liddy, marcos]
+          example: ikea
+        colors:
+          type: array
+          items:
+            type: string
+          example: ["#000000"]
+        featured:
+          type: boolean
+          example: false
+        freeShipping:
+          type: boolean
+          example: false
+        inventory:
+          type: number
+          example: 15
+
+    Review:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 64a1c2b3d4e5f6a7b8c9d0e3
+        product:
+          type: string
+          example: 64a1c2b3d4e5f6a7b8c9d0e2
+        user:
+          type: string
+          example: 64a1c2b3d4e5f6a7b8c9d0e1
+        rating:
+          type: number
+          minimum: 1
+          maximum: 5
+          example: 4
+        title:
+          type: string
+          example: Great product!
+        comment:
+          type: string
+          example: Really happy with this purchase.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ReviewInput:
+      type: object
+      required: [product, rating, title, comment]
+      properties:
+        product:
+          type: string
+          example: 64a1c2b3d4e5f6a7b8c9d0e2
+        rating:
+          type: number
+          minimum: 1
+          maximum: 5
+          example: 4
+        title:
+          type: string
+          example: Great product!
+        comment:
+          type: string
+          example: Really happy with this purchase.
+
+    CartItem:
+      type: object
+      required: [product, amount]
+      properties:
+        product:
+          type: string
+          example: 64a1c2b3d4e5f6a7b8c9d0e2
+        amount:
+          type: number
+          example: 2
+
+    Order:
+      type: object
+      properties:
+        _id:
+          type: string
+        tax:
+          type: number
+          example: 399
+        shippingFee:
+          type: number
+          example: 499
+        subtotal:
+          type: number
+          example: 59800
+        total:
+          type: number
+          example: 60698
+        cartItems:
+          type: array
+          items:
+            type: object
+        status:
+          type: string
+          enum: [pending, failed, paid, delivered, canceled]
+          example: pending
+        clientSecret:
+          type: string
+        paymentIntentId:
+          type: string
+
+    CreateOrderInput:
+      type: object
+      required: [items, tax, shippingFee]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CartItem"
+        tax:
+          type: number
+          example: 399
+        shippingFee:
+          type: number
+          example: 499
+
+    Error:
+      type: object
+      properties:
+        msg:
+          type: string
+          example: Something went wrong
+
+tags:
+  - name: Auth
+    description: Register, Login, Logout
+  - name: Users
+    description: User management
+  - name: Products
+    description: Product catalog
+  - name: Reviews
+    description: Product reviews
+  - name: Orders
+    description: Order management
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: User registered successfully
+        "400":
+          description: Bad request
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login and receive auth cookie
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Login successful
+        "401":
+          description: Invalid credentials
+
+  /auth/logout:
+    get:
+      tags: [Auth]
+      summary: Logout and clear auth cookie
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Logout successful
+
+  /users:
+    get:
+      tags: [Users]
+      summary: Get all users (Admin only)
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: List of all users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+                  count:
+                    type: number
+        "403":
+          description: Forbidden – Admin only
+
+  /users/showMe:
+    get:
+      tags: [Users]
+      summary: Get current logged-in user
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Current user info
+
+  /users/updateUser:
+    patch:
+      tags: [Users]
+      summary: Update current user name and email
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserInput"
+      responses:
+        "200":
+          description: User updated successfully
+
+  /users/updateUserPassword:
+    patch:
+      tags: [Users]
+      summary: Update current user password
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePasswordInput"
+      responses:
+        "200":
+          description: Password updated successfully
+        "401":
+          description: Old password incorrect
+
+  /users/deleteUser/{id}:
+    delete:
+      tags: [Users]
+      summary: Delete a user by ID
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User deleted
+        "404":
+          description: User not found
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Get a single user by ID (Auth required)
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Single user
+        "404":
+          description: User not found
+
+  /products:
+    get:
+      tags: [Products]
+      summary: Get all products (Public)
+      responses:
+        "200":
+          description: List of all products
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  products:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Product"
+                  count:
+                    type: number
+
+    post:
+      tags: [Products]
+      summary: Create a product (Admin only)
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductInput"
+      responses:
+        "201":
+          description: Product created
+        "403":
+          description: Forbidden – Admin only
+
+  /products/uploadImage:
+    post:
+      tags: [Products]
+      summary: Upload a product image (Admin only)
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Image uploaded successfully
+
+  /products/{id}:
+    get:
+      tags: [Products]
+      summary: Get a single product (Public)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Single product
+        "404":
+          description: Not found
+
+    patch:
+      tags: [Products]
+      summary: Update a product (Admin only)
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductInput"
+      responses:
+        "200":
+          description: Product updated
+
+    delete:
+      tags: [Products]
+      summary: Delete a product (Admin only)
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Product deleted
+
+  /products/{id}/reviews:
+    get:
+      tags: [Products]
+      summary: Get all reviews for a product (Public)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Reviews for the product
+
+  /reviews:
+    post:
+      tags: [Reviews]
+      summary: Create a review (Auth required)
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewInput"
+      responses:
+        "201":
+          description: Review created
+        "400":
+          description: Already reviewed this product
+
+    get:
+      tags: [Reviews]
+      summary: Get all reviews (Public)
+      responses:
+        "200":
+          description: List of all reviews
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reviews:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Review"
+                  count:
+                    type: number
+
+  /reviews/{id}:
+    get:
+      tags: [Reviews]
+      summary: Get a single review (Public)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Single review
+        "404":
+          description: Not found
+
+    patch:
+      tags: [Reviews]
+      summary: Update a review (Auth – owner only)
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rating:
+                  type: number
+                  minimum: 1
+                  maximum: 5
+                  example: 5
+                title:
+                  type: string
+                  example: Updated title
+                comment:
+                  type: string
+                  example: Updated comment
+      responses:
+        "200":
+          description: Review updated
+
+    delete:
+      tags: [Reviews]
+      summary: Delete a review (Auth – owner or admin)
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Review deleted
+
+  /orders:
+    post:
+      tags: [Orders]
+      summary: Create a new order (Auth required)
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderInput"
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  order:
+                    $ref: "#/components/schemas/Order"
+                  clientSecret:
+                    type: string
+
+    get:
+      tags: [Orders]
+      summary: Get all orders (Admin only)
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: List of all orders
+        "403":
+          description: Forbidden – Admin only
+
+  /orders/showAllMyOrders:
+    get:
+      tags: [Orders]
+      summary: Get current user orders (Auth required)
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Current user orders
+
+  /orders/{id}:
+    get:
+      tags: [Orders]
+      summary: Get a single order (Auth – owner or admin)
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Single order
+        "404":
+          description: Order not found
+
+    patch:
+      tags: [Orders]
+      summary: Update order to paid (Auth – owner)
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [paymentIntentId]
+              properties:
+                paymentIntentId:
+                  type: string
+                  example: pi_abc123
+      responses:
+        "200":
+          description: Order updated
+
+    delete:
+      tags: [Orders]
+      summary: Delete an order (Admin only)
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Order deleted
