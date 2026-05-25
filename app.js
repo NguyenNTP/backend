@@ -41,7 +41,12 @@ app.use(fileUpload()); // middleware to handle file uploads
 
 app.use(express.urlencoded({ extended: false })); // middleware to parse URL-encoded bodies. it helps to access req.body
 app.use(express.static('./public'));
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL,
+    credentials: true,
+  })
+); // middleware to handle CORS requests. it helps to access req.cookies. it is used to allow requests from the client.
 
 app.get('/api/v1', (req, res) => {
   // console.log(req.cookies);
