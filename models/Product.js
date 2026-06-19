@@ -39,7 +39,7 @@ const ProductSchema = mongoose.Schema(
     },
     colors: {
       type: [String],
-      required: true,
+      // required: true,
       default: ['#000000'],
     },
     featured: {
@@ -64,7 +64,7 @@ const ProductSchema = mongoose.Schema(
       default: 0,
     },
     user: {
-      type: mongoose.Types.ObjectId, // this is to establish a relationship between product and user
+      type: mongoose.Schema.Types.ObjectId, // this is to establish a relationship between product and user
       ref: 'User', // reference to User model
       required: true,
     },

@@ -4,11 +4,30 @@ const CustomError = require('../errors');
 const path = require('path');
 
 const createProduct = async (req, res) => {
-  req.body.user = req.user.userId; // assuming req.user is set by authentication middleware
-  const product = await Product.create(req.body); // Create new product instance
+  const isBulk = Array.isArray(req.body);
+  const items = isBulk ? req.body : [req.body];
+
+  if (isBulk && items.length === 0) {
+    throw new CustomError.BadRequestError(
+      'Please provide at least one product'
+    );
+  }
+
+  const data = items.map((product) => ({
+    ...product,
+    user: req.user.userId,
+  }));
+
+  const created = await Product.create(data);
+
   try {
-    product.save(); // Save to database (or any storage)
-    res.status(StatusCodes.CREATED).json({ product }); // Respond with created product
+    res
+      .status(StatusCodes.CREATED)
+      .json(
+        isBulk
+          ? { products: created, count: created.length }
+          : { product: created[0] }
+      ); // Respond with created product
   } catch (error) {
     res.status(StatusCodes.BAD_REQUEST).json({ error: error.message }); // Handle errors appropriately
   }
