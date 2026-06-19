@@ -27,15 +27,15 @@ const ProductSchema = mongoose.Schema(
     category: {
       type: String,
       required: [true, 'Please provide product category'],
-      enum: ['office', 'kitchen', 'bedroom', 'living room', 'dining', 'kids'],
+      // enum: ['office', 'kitchen', 'bedroom', 'living room', 'dining', 'kids'],
     },
     company: {
       type: String,
       required: [true, 'Please provide product company'],
-      enum: {
-        values: ['ikea', 'liddy', 'marcos'],
-        message: '{VALUE} is not supported',
-      },
+      // enum: {
+      //   values: ['ikea', 'liddy', 'marcos'],
+      //   message: '{VALUE} is not supported',
+      // },
     },
     colors: {
       type: [String],
