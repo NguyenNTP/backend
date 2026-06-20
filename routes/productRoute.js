@@ -12,6 +12,7 @@ const {
 const {
   authenticateUser,
   authorizePermissions,
+  optionalAuthenticateUser,
 } = require('../middleware/authentication');
 
 const getSingleProductReviews =
@@ -32,6 +33,8 @@ router
   .route('/uploadImage')
   .post(authenticateUser, authorizePermissions('admin'), uploadImage);
 
-router.route('/:id/reviews').get(getSingleProductReviews);
+router
+  .route('/:id/reviews')
+  .get(optionalAuthenticateUser, getSingleProductReviews);
 
 module.exports = router;
