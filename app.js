@@ -3,12 +3,12 @@
 const express = require('express');
 const app = express();
 
-const swaggerUI = require('swagger-ui-express');
-const YAML = require('yamljs');
-const swaggerDocument = YAML.load('./swagger.yaml');
+const swaggerUI = require('swagger-ui-express'); // middleware to serve swagger UI. it helps to access the swagger UI.
+const YAML = require('yamljs'); // middleware to load YAML files. it helps to load the swagger.yaml file.
+const swaggerDocument = YAML.load('./swagger.yaml'); // middleware to load the swagger.yaml file. it helps to load the swagger.yaml file.
 
-require('dotenv').config();
-require('express-async-errors');
+require('dotenv').config(); // middleware to load the .env file. it helps to load the .env file.
+require('express-async-errors'); // middleware to handle async errors. it helps to handle async errors.
 //rest of the packages
 const morgan = require('morgan'); // HTTP request logger middleware for node.js
 const cookieParser = require('cookie-parser'); // Parse Cookie header and populate req.cookies with an object keyed by the cookie n
@@ -41,12 +41,25 @@ app.use(fileUpload()); // middleware to handle file uploads
 
 app.use(express.urlencoded({ extended: false })); // middleware to parse URL-encoded bodies. it helps to access req.body
 app.use(express.static('./public'));
+
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://greenshopcom.com',
+  'https://www.greenshopcom.com',
+];
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   })
-); // middleware to handle CORS requests. it helps to access req.cookies. it is used to allow requests from the client.
+);
 
 app.get('/api/v1', (req, res) => {
   // console.log(req.cookies);
