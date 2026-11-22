@@ -13,8 +13,9 @@ require('express-async-errors'); // middleware to handle async errors. it helps 
 const morgan = require('morgan'); // HTTP request logger middleware for node.js
 const cookieParser = require('cookie-parser'); // Parse Cookie header and populate req.cookies with an object keyed by the cookie n
 const fileUpload = require('express-fileupload');
-
-app.use(express.static('public'));
+const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const rateLimiter = require('express-rate-limit');
 
 const cors = require('cors');
 
@@ -33,13 +34,26 @@ const notFoundMiddleware = require('./middleware/not-found');
 const errorHandlerMiddleware = require('./middleware/error-handler');
 
 // routes
+app.set('trust proxy', 1); // behind a reverse proxy (needed for rate limiting by real IP)
+app.use(
+  rateLimiter({
+    windowMs: 15 * 60 * 1000,
+    max: 300,
+  })
+);
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } })); // allow the frontend origin to load /uploads images
 app.use(morgan('tiny')); // logging middleware
 app.use(express.json()); // middleware to parse JSON bodies. it helps to access req.body
-app.use(cookieParser(process.env.JWT_SECRET)); // middleware to parse cookies. it helps to access req.cookies
-
-app.use(fileUpload()); // middleware to handle file uploads
-
 app.use(express.urlencoded({ extended: false })); // middleware to parse URL-encoded bodies. it helps to access req.body
+app.use(cookieParser(process.env.JWT_SECRET)); // middleware to parse cookies. it helps to access req.cookies
+app.use(mongoSanitize()); // strip $ and . keys to prevent NoSQL injection
+
+app.use(
+  fileUpload({
+    limits: { fileSize: 1024 * 1024 }, // 1MB
+  })
+); // middleware to handle file uploads
+
 app.use(express.static('./public'));
 
 const allowedOrigins = [
@@ -62,8 +76,6 @@ app.use(
 );
 
 app.get('/api/v1', (req, res) => {
-  // console.log(req.cookies);
-  console.log(req.signedCookies); // to access signed cookies
   res.send('E-commerce App....');
 });
 

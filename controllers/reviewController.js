@@ -24,9 +24,15 @@ const createReview = async (req, res) => {
     );
   }
 
-  req.body.user = req.user.userId;
+  const { rating, title, comment } = req.body;
 
-  const review = await Review.create(req.body);
+  const review = await Review.create({
+    product: productId,
+    user: req.user.userId,
+    rating,
+    title,
+    comment,
+  });
   res.status(StatusCodes.CREATED).json({ review });
 };
 
@@ -61,20 +67,18 @@ const updateReview = async (req, res) => {
 
   const { rating, title, comment } = req.body;
 
-  const review = await Review.findByIdAndUpdate(reviewId, req.body, {
-    new: true,
-    runValidators: true,
-  });
+  const review = await Review.findOne({ _id: reviewId });
 
   if (!review) {
     throw new CustomError.NotFoundError(`No review with id : ${reviewId}`);
   }
 
+  // check permission BEFORE changing anything
   checkPermissions(req.user, review.user);
 
-  if (rating) review.rating = rating;
-  if (title) review.title = title;
-  if (comment) review.comment = comment;
+  if (rating !== undefined) review.rating = rating;
+  if (title !== undefined) review.title = title;
+  if (comment !== undefined) review.comment = comment;
 
   await review.save();
   res.status(StatusCodes.OK).json({ review });

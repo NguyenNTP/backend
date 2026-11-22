@@ -5,7 +5,7 @@ const authenticateUser = (req, res, next) => {
   const token = req.signedCookies.token; // accessing signed cookie
 
   if (!token) {
-    throw new CustomError.CustomAPIError('Authentication error');
+    throw new CustomError.UnauthenticatedError('Authentication invalid');
   }
 
   try {

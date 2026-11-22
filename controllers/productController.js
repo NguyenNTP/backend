@@ -2,6 +2,7 @@ const { StatusCodes } = require('http-status-codes');
 const Product = require('../models/Product');
 const CustomError = require('../errors');
 const path = require('path');
+const crypto = require('crypto');
 
 const createProduct = async (req, res) => {
   const isBulk = Array.isArray(req.body);
@@ -20,17 +21,13 @@ const createProduct = async (req, res) => {
 
   const created = await Product.create(data);
 
-  try {
-    res
-      .status(StatusCodes.CREATED)
-      .json(
-        isBulk
-          ? { products: created, count: created.length }
-          : { product: created[0] }
-      ); // Respond with created product
-  } catch (error) {
-    res.status(StatusCodes.BAD_REQUEST).json({ error: error.message }); // Handle errors appropriately
-  }
+  res
+    .status(StatusCodes.CREATED)
+    .json(
+      isBulk
+        ? { products: created, count: created.length }
+        : { product: created[0] }
+    ); // Respond with created product
 };
 
 const getSingleProduct = async (req, res) => {
@@ -67,23 +64,34 @@ const updateProduct = async (req, res) => {
 const deleteProduct = async (req, res) => {
   const { id: productId } = req.params;
 
-  const product = await Product.findOneAndDelete({ _id: productId });
+  const product = await Product.findOne({ _id: productId });
 
   if (!product) {
     throw new CustomError.NotFoundError(`No product with id : ${productId}`);
   }
 
+  await product.remove(); // triggers pre('remove') hook that deletes its reviews
+
   res.status(StatusCodes.OK).json({ msg: 'Product removed' });
 };
 
 const uploadImage = async (req, res) => {
-  if (!req.files) {
+  if (!req.files || !req.files.image) {
     throw new CustomError.BadRequestError('No file uploaded'); // Check if file is uploaded
   }
   const productImage = req.files.image; // Access the uploaded file
 
-  if (!productImage.mimetype.startsWith('image')) {
-    throw new CustomError.BadRequestError('Please upload image file'); // Validate file type
+  const allowedTypes = {
+    'image/jpeg': '.jpg',
+    'image/png': '.png',
+    'image/gif': '.gif',
+    'image/webp': '.webp',
+  };
+  const extension = allowedTypes[productImage.mimetype];
+  if (!extension) {
+    throw new CustomError.BadRequestError(
+      'Please upload a jpg, png, gif or webp image'
+    ); // Validate file type
   }
   const maxSize = 1024 * 1024; // 1MB
 
@@ -93,15 +101,14 @@ const uploadImage = async (req, res) => {
     ); // Validate file size
   }
 
-  const imagePath = path.join(
-    __dirname,
-    '../public/uploads/' + `${productImage.name}`
-  ); // Define path to save the image
+  // server-generated filename: no overwrite, no path traversal, extension from validated mimetype
+  const fileName = `${crypto.randomUUID()}${extension}`;
+  const imagePath = path.join(__dirname, '../public/uploads', fileName);
 
   await productImage.mv(imagePath); // Move file to desired location
 
   res.status(StatusCodes.OK).json({
-    image: `/uploads/${productImage.name}`, // Respond with image path
+    image: `/uploads/${fileName}`, // Respond with image path
   });
 };
 

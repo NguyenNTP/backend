@@ -9,7 +9,6 @@ const {
 } = require('../utils');
 
 const getAllUsers = async (req, res) => {
-  console.log(req.user); // from authenticateUser middleware
   const users = await User.find({ role: 'user' }).select('-password'); // exclude password field
   res.status(StatusCodes.OK).json({ users });
 };
